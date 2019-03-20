@@ -1,84 +1,129 @@
-#include <iostream>
+#pragma once
+
 #include "FHitAndMIssGame.h"
+#include <map>
+
+#define TMap std::map
+using int32 = int;
 
 FHitAndMissGame::FHitAndMissGame()
 {
 	Reset();
 }
 
+int32 FHitAndMissGame::GetMaxTries() const
+{
+	TMap<int32, int32> WordLengthToMaxTries{ {3,4},{4,7},{5,10},{6,16},{7,20} };
+	return WordLengthToMaxTries[MyHiddenWord.length()];
+}
+
+int32 FHitAndMissGame::GetCurrentTry() const
+{
+	return MyCurrentTry;
+}
+
+int32 FHitAndMissGame::GetHiddenWordLength() const
+{
+	return MyHiddenWord.length();
+}
+
+bool FHitAndMissGame::IsGameWon() const
+{
+	return bGameIsWon;
+}
+
+EGuessStatus FHitAndMissGame::CheckGuessValidity(FString Guess) const
+{
+	if (!IsIsogram(Guess))
+	{
+		return EGuessStatus::Not_Isogram;
+	}
+	else if(!IsLowerCase(Guess))	
+	{
+		return EGuessStatus::Not_LowerCase;
+	}
+	else if(Guess.length()!=GetHiddenWordLength())
+	{
+		return EGuessStatus::Wrong_Length;
+	}
+	else
+	{
+		return EGuessStatus::OK;
+	}
+}
+
 void FHitAndMissGame::Reset()
 {
-	MyCurrentTry = 1;
-	MaxTries = 7;
-	MyHiddenWord = "plan";
+	const FString HIDDEN_WORD = "sprint";
+	MyHiddenWord = HIDDEN_WORD;
+
+	MyCurrentTry = 1;	
+	bGameIsWon = false;
 	return;
 }
 
-void FHitAndMissGame::PrintIntro()
+FHitAndMissCount FHitAndMissGame::SubmitValidGuess(FString Guess)
 {
-	std::cout << "Welcome to the Hit And Miss Game :-)\n";
-	std::cout << "Guess the 4 letter Isogram:\n";
-	return;
-}
+	MyCurrentTry++;
+	FHitAndMissCount HitAndMissCount;
+	int32 WordLength = MyHiddenWord.length();	
 
-int32 FHitAndMissGame::PlayGame()
-{
-	std::cout << "Enter Your Guess: \n";
-	do
+	for (int32 i = 0; i < WordLength; i++)
 	{
-		std::cout << "Try " << MyCurrentTry << " Out of " << MaxTries << " Tries:   ";
-		std::getline(std::cin, Guess);
-
-		FCheckValidity(Guess);
-		std::cout << "\nHits: " << HMCount.Hits << "\nMisses: " << HMCount.Misses << std::endl;
-		MyCurrentTry++;
-		HMCount.Hits = 0;
-		HMCount.Misses = 0;
-	} while (MyCurrentTry <= MaxTries);
-	return 0;
-}
-
-void FHitAndMissGame::CheckGuessForError(std::string Guess)
-{
-	if(Guess.size()!=MyHiddenWord.size())
-		
-}
-
-int32 FHitAndMissGame::PrintError(EError)
-{
-	EError C;
-	switch (C)
-	{
-	case FHitAndMissGame::Not_Isogram:
-		std::cout << "Your word should be an Isogram.";
-		break;
-	case FHitAndMissGame::Invalid_Length:
-		std::cout << "Word Length must be " << MyHiddenWord.size() << " .";
-		break;
-	case FHitAndMissGame::Mixed_Cases:
-		//Fix the Error
-		break;
-	default:
-		break;
-	}
-	return 0;
-}
-
-void FHitAndMissGame::FCheckValidity(std::string Guess)
-{
-	for (int32 i = 0; i < 4; i++)
-	{
-		for (int32 j = 0; j < 4; j++)
+		for (int32 j = 0; j < WordLength; j++)
 		{
-			if (MyHiddenWord[i] == Guess[j] && i == j)
+			if (Guess[i] == MyHiddenWord[j] && i == j)
 			{
-				HMCount.Hits++;
+				HitAndMissCount.Hits++;
 			}
-			else if (MyHiddenWord[i] == Guess[j] && i != j)
+			else if(Guess[i] == MyHiddenWord[j] && i != j)
 			{
-				HMCount.Misses++;
+				HitAndMissCount.Misses++;
 			}
 		}
 	}
-	return;
+	if (HitAndMissCount.Hits == WordLength)
+	{
+		bGameIsWon = true;
+	}
+	else
+	{
+		bGameIsWon = false;
+	}
+	return HitAndMissCount;
 }
+
+bool FHitAndMissGame::IsIsogram(FString Word) const
+{
+	if (Word.length() <= 1) { return true; }
+
+	TMap<char, bool> LetterSeen;
+	for (auto Letter : Word)
+	{
+		Letter = tolower(Letter);
+		if (LetterSeen[Letter])
+		{
+			return false;
+		}
+		else
+		{
+			LetterSeen[Letter] = true;
+		}
+	}
+	return true;
+}
+
+bool FHitAndMissGame::IsLowerCase(FString Word) const
+{
+	for (auto Letter : Word)
+	{
+		if (!islower(Letter))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+
+
